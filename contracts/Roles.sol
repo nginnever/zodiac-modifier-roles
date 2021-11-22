@@ -21,19 +21,13 @@ contract Roles is Modifier {
     bytes4 functionSig,
     bool allowed
   );
-  // event SetParametersAllowedOnFunction(
-  //   uint16 role,
-  //   address target,
-  //   bytes4 functionSig,
-  //   string[] parameters,
-  //   bool allowed
-  // );
+
   event SetParameterAllowedValues(
     uint16 role,
     address target,
     bytes4 functionSig,
     string parameter,
-    bool allowed
+    bytes allowedValue
   );
   event RolesSetup(
     address indexed initiator,
@@ -44,22 +38,12 @@ contract Roles is Modifier {
 
   uint16 internal constant MAX_ROLES = 16;
 
-  enum Types {
-    Bool,
-    Uint8
-  }
-
-  struct Parameter {
-    bool scoped;
-    mapping (bytes => bool) allowedValues;
-  }
-
   struct Function {
     bool allowed;
     bool scoped;
     string name;
     string[] paramTypes;
-    mapping (string => Parameter) parameters;
+    mapping (string => bytes) allowedValues; // make array and bring back mapping for values?
   }
 
   struct Target {
@@ -215,47 +199,21 @@ contract Roles is Modifier {
   /// @param target Address to be scoped/unscoped.
   /// @param functionSig first 4 bytes of the sha256 of the function signature
   /// @param parameter name of the parameter to scope
-  /// @param scoped Bool to scope (true) or unscope (false) function calls on target.
-  function setParameterScoped(
-    uint16 role,
-    address target,
-    bytes4 functionSig,
-    string memory parameter,
-    bool scoped
-  ) external onlyOwner {
-    allowedTargetsForRole[role][target].allowedFunctions[functionSig].parameters[parameter].scoped = scoped;
-    emit SetParameterScoped(
-      role,
-      target,
-      functionSig,
-      parameter,
-      allowedTargetsForRole[role][target].allowedFunctions[functionSig].parameters[parameter].scoped
-    );
-  }
-
-  /// @dev Sets whether or not calls to an address should be scoped to specific function signatures.
-  /// @notice Only callable by owner.
-  /// @param role Role to set for
-  /// @param target Address to be scoped/unscoped.
-  /// @param functionSig first 4 bytes of the sha256 of the function signature
-  /// @param parameter name of the parameter to scope
   /// @param allowedValue the allowed parameter value that can be called
-  function setParameterAllowedValues(
+  function setParameterAllowedValue(
     uint16 role,
     address target,
     bytes4 functionSig,
     string memory parameter,
-    bytes memory allowedValue,
-    bool allow
+    bytes memory allowedValue
   ) external onlyOwner {
-    // todo: require parameter has been marked as scoped?
-    allowedTargetsForRole[role][target].allowedFunctions[functionSig].parameters[parameter].allowedValues[allowedValue] = allow;
+    allowedTargetsForRole[role][target].allowedFunctions[functionSig].allowedValues[parameter] = allowedValue;
     emit SetParameterAllowedValues(
       role,
       target,
       functionSig,
       parameter,
-      allowedTargetsForRole[role][target].allowedFunctions[functionSig].parameters[parameter].allowedValues[allowedValue]
+      allowedTargetsForRole[role][target].allowedFunctions[functionSig].allowedValues[parameter]
     );
   }
 
